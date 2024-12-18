@@ -10,7 +10,7 @@ import {
 } from "../services/database";
 
 // Tipagem de um item favorito
-export interface Favorite {
+interface Favorite {
   id: number;
   type: string;
   data: any;

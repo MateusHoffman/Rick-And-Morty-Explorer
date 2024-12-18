@@ -87,3 +87,10 @@ export const fetchEpisodes = async (
 ): Promise<ApiResponse<Episode>> => {
   return await fetchData<Episode>("/episode", params);
 };
+
+
+const xxx = async (
+  params: ApiParams
+): Promise<ApiResponse<Episode>> => {
+  return await fetchData<Episode>("/episode", params);
+};

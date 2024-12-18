@@ -1,6 +1,6 @@
 import { SQLiteDatabase, openDatabaseAsync } from "expo-sqlite";
 
-export interface FavoriteItem {
+interface FavoriteItem {
   id: number;
   type: string;
   data: string;

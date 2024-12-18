@@ -1,5 +1,5 @@
 // Tipagem robusta para os temas
-export interface ThemeColors {
+interface ThemeColors {
   primary: string;
   background: string;
   card: string;
@@ -8,7 +8,7 @@ export interface ThemeColors {
   notification: string;
 }
 
-export interface AppTheme {
+interface AppTheme {
   dark: boolean;
   colors: ThemeColors;
 }
