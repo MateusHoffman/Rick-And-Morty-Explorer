@@ -1,3 +1,5 @@
+// src/services/api.ts
+
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 // Definição dos tipos para a API
@@ -15,7 +17,7 @@ interface ApiResponse<T> {
   };
 }
 
-interface Character {
+interface Episode {
   id: number;
   name: string;
   status: string;
@@ -36,12 +38,23 @@ interface Character {
   created: string;
 }
 
-interface Episode {
+interface Character {
   id: number;
   name: string;
-  air_date: string;
-  episode: string;
-  characters: string[];
+  status: string;
+  species: string;
+  type: string;
+  gender: string;
+  origin: {
+    name: string;
+    url: string;
+  };
+  location: {
+    name: string;
+    url: string;
+  };
+  image: string;
+  episode: string[];
   url: string;
   created: string;
 }
@@ -88,9 +101,4 @@ export const fetchEpisodes = async (
   return await fetchData<Episode>("/episode", params);
 };
 
-
-const xxx = async (
-  params: ApiParams
-): Promise<ApiResponse<Episode>> => {
-  return await fetchData<Episode>("/episode", params);
-};
+export { api };
