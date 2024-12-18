@@ -39,7 +39,8 @@
     "babel-plugin-styled-components": "^2.1.4",
     "depcheck": "^1.4.7",
     "eslint": "^9.17.0",
-    "eslint-plugin-react": "^7.37.2"
+    "eslint-plugin-react": "^7.37.2",
+    "typescript": "^5.3.3"
   },
   "private": true,
   "author": "Mateus Hoffman <mateushoffmandev@gmail.com>"

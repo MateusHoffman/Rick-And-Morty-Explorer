@@ -123,7 +123,7 @@ const FilterSection: React.FC<{
       <InputContainer>
         <Ionicons name="pulse" size={20} color={theme.colors.text} />
         <StyledInput
-          placeholder="Status (vivo, morto, desconhecido)"
+          placeholder="Status (alive, dead e unknown)"
           placeholderTextColor={theme.colors.text}
           value={status}
           onChangeText={setStatus}
@@ -143,7 +143,7 @@ const FilterSection: React.FC<{
       <InputContainer>
         <Ionicons name="male-female" size={20} color={theme.colors.text} />
         <StyledInput
-          placeholder="Gênero (feminino, masculino, sem gênero)"
+          placeholder="Gênero (female, male e unknown)"
           placeholderTextColor={theme.colors.text}
           value={gender}
           onChangeText={setGender}
