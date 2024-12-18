@@ -100,5 +100,3 @@ export const fetchEpisodes = async (
 ): Promise<ApiResponse<Episode>> => {
   return await fetchData<Episode>("/episode", params);
 };
-
-export { api };
