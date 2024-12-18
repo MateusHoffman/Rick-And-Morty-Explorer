@@ -3,15 +3,13 @@ import {
   FlatList,
   ActivityIndicator,
   Modal,
-  TouchableOpacity,
-  Platform,
   View,
 } from "react-native";
 import styled, { useTheme } from "styled-components/native";
 import { Ionicons } from "@expo/vector-icons";
 import { charactersViewModel } from "../../viewmodels/CharacterListViewModel";
 
-// Estilização
+// Estilização com Styled Components
 const Container = styled.View`
   flex: 1;
   background-color: ${({ theme }) => theme.colors.background};
@@ -32,7 +30,7 @@ const Title = styled.Text`
   font-size: 16px;
 `;
 
-const BotaoFiltrar = styled.TouchableOpacity`
+const FilterButton = styled.TouchableOpacity`
   background-color: ${({ theme }) => theme.colors.primary};
   padding: 12px;
   border-radius: 8px;
@@ -42,21 +40,21 @@ const BotaoFiltrar = styled.TouchableOpacity`
   justify-content: center;
 `;
 
-const BotaoTexto = styled.Text`
+const ButtonText = styled.Text`
   color: #fff;
   font-size: 16px;
   margin-left: 8px;
   font-weight: bold;
 `;
 
-const ListaVazia = styled.Text`
+const EmptyListMessage = styled.Text`
   text-align: center;
   margin-top: 20px;
   color: ${({ theme }) => theme.colors.text};
   font-size: 16px;
 `;
 
-const ModalContent = styled.View`
+const ModalContainer = styled.View`
   flex: 1;
   justify-content: center;
   background-color: ${({ theme }) => theme.colors.background};
@@ -80,10 +78,89 @@ const StyledInput = styled.TextInput`
   margin-left: 8px;
 `;
 
-const FecharBotao = styled.TouchableOpacity`
+const CloseButton = styled.TouchableOpacity`
   align-items: center;
   margin-top: 12px;
 `;
+
+const FilterSection: React.FC<{
+  name: string;
+  status: string;
+  species: string;
+  gender: string;
+  setName: (value: string) => void;
+  setStatus: (value: string) => void;
+  setSpecies: (value: string) => void;
+  setGender: (value: string) => void;
+  applyFilters: () => void;
+  closeModal: () => void;
+}> = ({
+  name,
+  status,
+  species,
+  gender,
+  setName,
+  setStatus,
+  setSpecies,
+  setGender,
+  applyFilters,
+  closeModal,
+}) => {
+  const theme = useTheme();
+
+  return (
+    <ModalContainer>
+      <InputContainer>
+        <Ionicons name="person" size={20} color={theme.colors.text} />
+        <StyledInput
+          placeholder="Nome"
+          placeholderTextColor={theme.colors.text}
+          value={name}
+          onChangeText={setName}
+        />
+      </InputContainer>
+
+      <InputContainer>
+        <Ionicons name="pulse" size={20} color={theme.colors.text} />
+        <StyledInput
+          placeholder="Status (vivo, morto, desconhecido)"
+          placeholderTextColor={theme.colors.text}
+          value={status}
+          onChangeText={setStatus}
+        />
+      </InputContainer>
+
+      <InputContainer>
+        <Ionicons name="earth" size={20} color={theme.colors.text} />
+        <StyledInput
+          placeholder="Espécie"
+          placeholderTextColor={theme.colors.text}
+          value={species}
+          onChangeText={setSpecies}
+        />
+      </InputContainer>
+
+      <InputContainer>
+        <Ionicons name="male-female" size={20} color={theme.colors.text} />
+        <StyledInput
+          placeholder="Gênero (feminino, masculino, sem gênero)"
+          placeholderTextColor={theme.colors.text}
+          value={gender}
+          onChangeText={setGender}
+        />
+      </InputContainer>
+
+      <FilterButton onPress={applyFilters}>
+        <Ionicons name="checkmark" size={20} color="#fff" />
+        <ButtonText>Aplicar Filtros</ButtonText>
+      </FilterButton>
+
+      <CloseButton onPress={closeModal}>
+        <Ionicons name="close-circle" size={28} color={theme.colors.text} />
+      </CloseButton>
+    </ModalContainer>
+  );
+};
 
 const CharacterListView: React.FC = () => {
   const theme = useTheme();
@@ -91,7 +168,6 @@ const CharacterListView: React.FC = () => {
   const [status, setStatus] = useState("");
   const [species, setSpecies] = useState("");
   const [gender, setGender] = useState("");
-
   const [modalVisible, setModalVisible] = useState(false);
 
   const {
@@ -105,9 +181,9 @@ const CharacterListView: React.FC = () => {
     refreshContent,
   } = charactersViewModel();
 
-  const onSearchChange = () => {
+  const applyFilters = () => {
     handleSearch({ name, status, species, gender });
-    setModalVisible(false); // Fecha o modal após aplicar os filtros
+    setModalVisible(false);
   };
 
   const renderItem = ({ item }: any) => (
@@ -123,24 +199,22 @@ const CharacterListView: React.FC = () => {
 
   return (
     <Container>
-      {/* Botão para abrir o modal de filtros */}
-      <BotaoFiltrar onPress={() => setModalVisible(true)}>
+      <FilterButton onPress={() => setModalVisible(true)}>
         <Ionicons name="filter" size={20} color="#fff" />
-        <BotaoTexto>Filtrar</BotaoTexto>
-      </BotaoFiltrar>
+        <ButtonText>Filtrar</ButtonText>
+      </FilterButton>
 
-      {/* Lista de personagens */}
       {isLoading ? (
         <ActivityIndicator size="large" color={theme.colors.primary} />
       ) : (
         <FlatList
           data={characters}
           keyExtractor={(item, index) =>
-            item?.id ? item.id.toString() : `chave-${index}`
+            item?.id ? item.id.toString() : `key-${index}`
           }
           renderItem={renderItem}
           ListEmptyComponent={
-            <ListaVazia>Nenhum personagem encontrado</ListaVazia>
+            <EmptyListMessage>Nenhum personagem encontrado</EmptyListMessage>
           }
           refreshing={isRefreshing}
           onRefresh={refreshContent}
@@ -154,64 +228,24 @@ const CharacterListView: React.FC = () => {
         />
       )}
 
-      {/* Modal para os filtros */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <ModalContent>
-          {/* Filtros */}
-          <InputContainer>
-            <Ionicons name="person" size={20} color={theme.colors.text} />
-            <StyledInput
-              placeholder="Nome"
-              placeholderTextColor={theme.colors.text}
-              value={name}
-              onChangeText={setName}
-            />
-          </InputContainer>
-
-          <InputContainer>
-            <Ionicons name="pulse" size={20} color={theme.colors.text} />
-            <StyledInput
-              placeholder="Status (alive, dead, unknown)"
-              placeholderTextColor={theme.colors.text}
-              value={status}
-              onChangeText={setStatus}
-            />
-          </InputContainer>
-
-          <InputContainer>
-            <Ionicons name="earth" size={20} color={theme.colors.text} />
-            <StyledInput
-              placeholder="Espécie"
-              placeholderTextColor={theme.colors.text}
-              value={species}
-              onChangeText={setSpecies}
-            />
-          </InputContainer>
-
-          <InputContainer>
-            <Ionicons name="male-female" size={20} color={theme.colors.text} />
-            <StyledInput
-              placeholder="Gênero (female, male, genderless, unknown)"
-              placeholderTextColor={theme.colors.text}
-              value={gender}
-              onChangeText={setGender}
-            />
-          </InputContainer>
-
-          <BotaoFiltrar onPress={onSearchChange}>
-            <Ionicons name="checkmark" size={20} color="#fff" />
-            <BotaoTexto>Aplicar Filtros</BotaoTexto>
-          </BotaoFiltrar>
-
-          <FecharBotao onPress={() => setModalVisible(false)}>
-            <Ionicons name="close-circle" size={28} color={theme.colors.text} />
-          </FecharBotao>
-        </ModalContent>
+        <FilterSection
+          name={name}
+          status={status}
+          species={species}
+          gender={gender}
+          setName={setName}
+          setStatus={setStatus}
+          setSpecies={setSpecies}
+          setGender={setGender}
+          applyFilters={applyFilters}
+          closeModal={() => setModalVisible(false)}
+        />
       </Modal>
     </Container>
   );

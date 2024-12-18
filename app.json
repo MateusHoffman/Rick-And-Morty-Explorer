@@ -4,28 +4,32 @@
     "slug": "RickAndMortyExplorer",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/splash-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "cover",
+      "backgroundColor": "#000000"
     },
+    "plugins": [
+      "expo-sqlite"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.mateushoffmandev.rickandmortyexplorer",
+      "versionCode": 2,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/splash-icon.png",
+        "backgroundColor": "#000000"
       }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-sqlite"
-    ]
+    "extra": {
+      "eas": {
+        "projectId": "7273d2cf-88f7-430a-9129-9086969d80ba"
+      }
+    }
   }
 }

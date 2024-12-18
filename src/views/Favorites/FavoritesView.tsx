@@ -1,12 +1,15 @@
-import React from "react";
-import {
-  View,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
+import React, { useState } from "react";
+import { FlatList, RefreshControl, View } from "react-native";
 import { useFavorites } from "../../viewmodels/FavoritesViewModel";
 import styled, { useTheme } from "styled-components/native";
+
+interface FavoriteItemData {
+  id: number;
+  data: {
+    episode: string;
+    name: string;
+  };
+}
 
 const Container = styled.View`
   flex: 1;
@@ -14,52 +17,75 @@ const Container = styled.View`
   padding: 16px;
 `;
 
-const FavoriteItem = styled.View`
+const FavoriteCard = styled.View`
   padding: 12px;
   border-bottom-width: 1px;
   border-bottom-color: ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme }) => theme.colors.card};
+  border-radius: 8px;
+  margin-bottom: 8px;
+  elevation: 2;
 `;
 
 const Title = styled.Text`
   color: ${({ theme }) => theme.colors.text};
   font-size: 16px;
+  font-weight: bold;
 `;
 
-const FavoritesView = () => {
+const Subtitle = styled.Text`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 14px;
+`;
+
+const EmptyMessage = styled.Text`
+  text-align: center;
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 16px;
+  margin-top: 20px;
+`;
+
+const FavoritesView: React.FC = () => {
   const theme = useTheme();
   const { favorites, refreshFavorites } = useFavorites();
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  // Função para forçar o refresh
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await refreshFavorites(); // Força o reload da lista
-    setRefreshing(false);
+    try {
+      setRefreshing(true);
+      await refreshFavorites();
+    } finally {
+      setRefreshing(false);
+    }
   };
+
+  const renderItem = ({ item }: { item: FavoriteItemData }) => (
+    <FavoriteCard>
+      <Title>{item.data.name}</Title>
+      <Subtitle>{item.data.episode}</Subtitle>
+    </FavoriteCard>
+  );
 
   return (
     <Container>
-      {favorites.length === 0 ? (
-        <Title>Nenhum favorito encontrado</Title>
-      ) : (
-        <FlatList
-          data={favorites}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <FavoriteItem>
-              <Title>{item.data.episode}</Title>
-              <Title>{item.data.name}</Title>
-            </FavoriteItem>
-          )}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh} // Chama o refresh manual
-              tintColor={theme.colors.primary}
-            />
-          }
-        />
-      )}
+      <FlatList
+        data={favorites}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]} // Para Android
+          />
+        }
+        ListEmptyComponent={
+          <EmptyMessage>Nenhum favorito encontrado.</EmptyMessage>
+        }
+        ListFooterComponent={<View style={{ height: 16 }} />}
+        showsVerticalScrollIndicator={false}
+      />
     </Container>
   );
 };

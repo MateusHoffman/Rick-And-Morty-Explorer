@@ -8,91 +8,97 @@ export interface FavoriteItem {
 
 const DATABASE_NAME = "RickAndMorty.db";
 
+// Conexão com o banco de dados
 export const getDBConnection = async (): Promise<SQLiteDatabase> => {
   try {
-    console.log("Tentando abrir o banco de dados...");
+    console.log("Iniciando conexão com o banco de dados...");
     const db = await openDatabaseAsync(DATABASE_NAME);
-    console.log("Banco de dados aberto com sucesso.");
+    console.log("Conexão com banco de dados aberta com sucesso.");
     return db;
   } catch (error) {
-    console.error("Erro ao abrir o banco de dados:", error);
-    throw error;
+    console.error("Erro ao conectar ao banco de dados:", error);
+    throw new Error("Falha ao abrir conexão com o banco de dados.");
   }
 };
 
+// Criação de tabelas
 export const createTables = async (db: SQLiteDatabase): Promise<void> => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS favorites (
+      id INTEGER PRIMARY KEY NOT NULL,
+      type TEXT NOT NULL,
+      data TEXT NOT NULL
+    );
+  `;
   try {
-    await db.runAsync(`
-      CREATE TABLE IF NOT EXISTS favorites (
-        id INTEGER PRIMARY KEY NOT NULL,
-        type TEXT NOT NULL,
-        data TEXT NOT NULL
-      );
-    `);
-    console.log("Tabela 'favorites' criada ou já existente.");
+    await db.execAsync(createTableQuery);
+    console.log("Tabela 'favorites' criada com sucesso.");
   } catch (error) {
-    console.error("Erro ao criar tabela:", error);
-    throw error;
+    console.error("Erro ao criar tabela 'favorites':", error);
+    throw new Error("Falha ao criar tabela no banco de dados.");
   }
 };
 
+// Salvar favorito no banco
 export const saveFavorite = async (
   db: SQLiteDatabase,
   id: number,
   type: string,
   data: string
 ): Promise<void> => {
+  const query = `INSERT OR REPLACE INTO favorites (id, type, data) VALUES (?, ?, ?);`;
   try {
-    await db.runAsync(
-      `INSERT OR REPLACE INTO favorites (id, type, data) VALUES (?, ?, ?);`,
-      [id, type, data]
-    );
-    console.log(`Favorito salvo com sucesso: ${id}`);
+    await db.runAsync(query, [id, type, data]);
+    console.log(`Favorito adicionado/atualizado com sucesso: ID ${id}`);
   } catch (error) {
-    console.error("Erro ao salvar favorito:", error);
-    throw error;
+    console.error(`Erro ao salvar favorito (ID ${id}):`, error);
+    throw new Error("Falha ao salvar favorito.");
   }
 };
 
+// Buscar todos os favoritos
 export const getFavorites = async (
   db: SQLiteDatabase
 ): Promise<FavoriteItem[]> => {
+  const query = `SELECT * FROM favorites;`;
   try {
-    const rows = await db.getAllAsync<FavoriteItem>(`SELECT * FROM favorites;`);
-    console.log("Favoritos carregados:", rows);
-    console.log('rows:', rows)
+    const rows = await db.getAllAsync<FavoriteItem>(query);
+    console.log("Favoritos carregados com sucesso.");
     return rows;
   } catch (error) {
     console.error("Erro ao buscar favoritos:", error);
-    throw error;
+    throw new Error("Falha ao carregar favoritos.");
   }
 };
 
+// Remover favorito do banco
 export const removeFavorite = async (
   db: SQLiteDatabase,
   id: number
 ): Promise<void> => {
+  const query = `DELETE FROM favorites WHERE id = ?;`;
   try {
-    await db.runAsync(`DELETE FROM favorites WHERE id = ?;`, [id]);
-    console.log(`Favorito removido: ${id}`);
+    await db.runAsync(query, [id]);
+    console.log(`Favorito removido com sucesso: ID ${id}`);
   } catch (error) {
-    console.error("Erro ao remover favorito:", error);
-    throw error;
+    console.error(`Erro ao remover favorito (ID ${id}):`, error);
+    throw new Error("Falha ao remover favorito.");
   }
 };
 
+// Verificar se um item é favorito
 export const isFavorite = async (
   db: SQLiteDatabase,
   id: number
 ): Promise<boolean> => {
+  const query = `SELECT id FROM favorites WHERE id = ?;`;
   try {
-    const row = await db.getFirstAsync<{ id: number }>(
-      `SELECT id FROM favorites WHERE id = ?;`,
-      [id]
-    );
-    return row !== null; // Se retornar null, não é favorito
+    const result = await db.getFirstAsync<{ id: number }>(query, [id]);
+    const isFav = result !== null;
+    console.log(`Verificação de favorito (ID ${id}): ${isFav}`);
+    return isFav;
   } catch (error) {
-    console.error("Erro ao verificar favorito:", error);
-    throw error;
+    console.error(`Erro ao verificar favorito (ID ${id}):`, error);
+    throw new Error("Falha ao verificar favorito.");
   }
 };

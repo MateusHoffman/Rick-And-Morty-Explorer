@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   FlatList,
   ActivityIndicator,
@@ -12,7 +12,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { episodesViewModel } from "../../viewmodels/EpisodeListViewModel";
 import Animated, { FadeInUp, FadeOut } from "react-native-reanimated";
 
-// Estilização com Styled Components
+// Tipagem para os itens do episódio
+interface Episode {
+  id: number;
+  name: string;
+  episode: string;
+}
+
 const Container = styled.View`
   flex: 1;
   background-color: ${({ theme }) => theme.colors.background};
@@ -52,9 +58,20 @@ const ResetButton = styled.TouchableOpacity`
   margin-left: 8px;
 `;
 
+const ListEmpty = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+const EmptyText = styled.Text`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: 16px;
+`;
+
 const EpisodeListView: React.FC = () => {
   const theme = useTheme();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState<string>("");
 
   // ViewModel hook
   const {
@@ -70,26 +87,39 @@ const EpisodeListView: React.FC = () => {
     refreshContent,
   } = episodesViewModel();
 
-  const onSearchChange = (text: string) => {
-    setSearch(text);
-    handleSearch(text);
-  };
-
-  const renderItem = ({ item }: any) => (
-    <EpisodeItem entering={FadeInUp} exiting={FadeOut}>
-      <View>
-        <Title>{item.episode}</Title>
-        <Title>{item.name}</Title>
-      </View>
-      <TouchableOpacity onPress={() => toggleFavorite(item, "episode")}>
-        <Ionicons
-          name={checkIfFavorite(item.id) ? "heart" : "heart-outline"}
-          size={24}
-          color={checkIfFavorite(item.id) ? "red" : theme.colors.text}
-        />
-      </TouchableOpacity>
-    </EpisodeItem>
+  const onSearchChange = useCallback(
+    (text: string) => {
+      setSearch(text);
+      handleSearch(text);
+    },
+    [handleSearch]
   );
+
+  const resetSearch = useCallback(() => {
+    setSearch("");
+    handleSearch("");
+  }, [handleSearch]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Episode }) => (
+      <EpisodeItem entering={FadeInUp} exiting={FadeOut}>
+        <View>
+          <Title>{item.episode}</Title>
+          <Title>{item.name}</Title>
+        </View>
+        <TouchableOpacity onPress={() => toggleFavorite(item, "episode")}>
+          <Ionicons
+            name={checkIfFavorite(item.id) ? "heart" : "heart-outline"}
+            size={24}
+            color={checkIfFavorite(item.id) ? "red" : theme.colors.text}
+          />
+        </TouchableOpacity>
+      </EpisodeItem>
+    ),
+    [checkIfFavorite, toggleFavorite, theme.colors.text]
+  );
+
+  const memoizedEpisodes = useMemo(() => episodes, [episodes]);
 
   return (
     <Container>
@@ -104,7 +134,7 @@ const EpisodeListView: React.FC = () => {
             onChangeText={onSearchChange}
           />
           {search.length > 0 && (
-            <ResetButton onPress={() => onSearchChange("")}>
+            <ResetButton onPress={resetSearch}>
               <Ionicons
                 name="close-circle"
                 size={20}
@@ -119,10 +149,8 @@ const EpisodeListView: React.FC = () => {
         <ActivityIndicator size="large" color={theme.colors.primary} />
       ) : (
         <FlatList
-          data={episodes}
-          keyExtractor={(item, index) =>
-            item?.id ? item.id.toString() : `key-${index}`
-          }
+          data={memoizedEpisodes}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           refreshing={isRefreshing}
           onRefresh={refreshContent}
@@ -132,6 +160,11 @@ const EpisodeListView: React.FC = () => {
             isFetchingNextPage ? (
               <ActivityIndicator size="small" color={theme.colors.primary} />
             ) : null
+          }
+          ListEmptyComponent={
+            <ListEmpty>
+              <EmptyText>Nenhum episódio encontrado</EmptyText>
+            </ListEmpty>
           }
         />
       )}

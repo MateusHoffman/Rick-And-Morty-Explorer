@@ -1,37 +1,61 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import {
   getThemePreference,
   setThemePreference,
 } from "../services/preferences";
 
-// Tipagem do contexto
+// Tipagem avançada do contexto com valores exatos
+type ThemeType = "light" | "dark";
+
 interface ThemeContextType {
-  theme: "light" | "dark";
-  toggleTheme: () => void;
+  theme: ThemeType;
+  toggleTheme: () => Promise<void>;
 }
 
-// Criando o contexto
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+// Criando o contexto com fallback seguro
+const ThemeContext = createContext<ThemeContextType | null>(null);
 
 // Provider do Tema
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<ThemeType>("light");
 
+  // Carregar a preferência do tema do armazenamento
   useEffect(() => {
     const loadTheme = async () => {
-      const storedTheme = await getThemePreference();
-      setTheme(storedTheme === "dark" ? "dark" : "light");
+      try {
+        const storedTheme = await getThemePreference();
+        if (storedTheme === "dark" || storedTheme === "light") {
+          setTheme(storedTheme);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar preferência de tema:", error);
+      }
     };
     loadTheme();
   }, []);
 
-  const toggleTheme = async () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    await setThemePreference(newTheme);
-  };
+  // Alternar o tema de forma segura e eficiente
+  const toggleTheme = useCallback(async () => {
+    try {
+      setTheme((prevTheme) => {
+        const newTheme = prevTheme === "light" ? "dark" : "light";
+        setThemePreference(newTheme).catch((err) =>
+          console.error("Erro ao salvar preferência de tema:", err)
+        );
+        return newTheme;
+      });
+    } catch (error) {
+      console.error("Erro ao alternar tema:", error);
+    }
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
@@ -40,8 +64,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// Hook personalizado para usar o tema
-export const useTheme = () => {
+// Hook personalizado para usar o tema com segurança
+export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
   if (!context) {
     throw new Error("useTheme deve ser usado dentro de um ThemeProvider");

@@ -3,6 +3,7 @@ import { useInfiniteQuery } from "react-query";
 import debounce from "lodash.debounce";
 import { fetchCharacters } from "../services/api";
 
+// Tipagem dos parâmetros da consulta
 interface CharacterQueryParams {
   name?: string;
   status?: string;
@@ -10,10 +11,40 @@ interface CharacterQueryParams {
   gender?: string;
 }
 
+// Tipagem da estrutura de resposta da API
+interface Character {
+  id: number;
+  name: string;
+  status: string;
+  species: string;
+  gender: string;
+}
+
+interface ApiResponse {
+  results: Character[];
+  info: {
+    next: string | null;
+  };
+}
+
 export const charactersViewModel = () => {
   const [queryParams, setQueryParams] = useState<CharacterQueryParams>({});
 
-  // Lógica de paginação e busca de personagens
+  // Função assíncrona que busca os personagens da API
+  const fetchCharactersPage = async ({
+    pageParam = 1,
+  }): Promise<{ results: Character[]; nextPage: number | null }> => {
+    const response: ApiResponse = await fetchCharacters({
+      ...queryParams,
+      page: pageParam,
+    });
+    return {
+      results: response.results,
+      nextPage: response.info.next ? pageParam + 1 : null,
+    };
+  };
+
+  // Configuração do React Query para paginação
   const {
     data,
     refetch,
@@ -22,34 +53,26 @@ export const charactersViewModel = () => {
     hasNextPage,
     isLoading,
     isRefetching,
-  } = useInfiniteQuery(
-    ["characters", queryParams],
-    async ({ pageParam = 1 }) => {
-      const response = await fetchCharacters({
-        ...queryParams,
-        page: pageParam,
-      });
-      return {
-        results: response.results,
-        nextPage: response.info.next ? pageParam + 1 : null,
-      };
-    },
-    {
-      getNextPageParam: (lastPage) => lastPage.nextPage,
-    }
-  );
+  } = useInfiniteQuery(["characters", queryParams], fetchCharactersPage, {
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    keepPreviousData: true,
+    staleTime: 1000 * 60 * 5, // Dados são considerados "frescos" por 5 minutos
+    cacheTime: 1000 * 60 * 10, // Dados permanecem no cache por 10 minutos
+  });
 
-  // Debounce para otimizar os filtros
+  // Debounce para otimização da busca
   const debouncedSearch = useCallback(
     debounce((params: CharacterQueryParams) => setQueryParams(params), 300),
     []
   );
 
+  // Manipula os filtros e reinicia a busca
   const handleSearch = (params: CharacterQueryParams) => {
     debouncedSearch(params);
     refetch();
   };
 
+  // Atualiza o conteúdo ao puxar para baixo
   const refreshContent = async () => {
     await refetch();
   };
@@ -60,7 +83,7 @@ export const charactersViewModel = () => {
     isRefreshing: isRefetching,
     handleSearch,
     fetchNextPage,
-    hasNextPage: Boolean(data?.pages.at(-1)?.nextPage),
+    hasNextPage: Boolean(data?.pages?.slice(-1)?.[0]?.nextPage),
     isFetchingNextPage,
     refreshContent,
   };

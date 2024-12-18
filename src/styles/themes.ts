@@ -1,4 +1,20 @@
-export const DefaultTheme = {
+// Tipagem robusta para os temas
+export interface ThemeColors {
+  primary: string;
+  background: string;
+  card: string;
+  text: string;
+  border: string;
+  notification: string;
+}
+
+export interface AppTheme {
+  dark: boolean;
+  colors: ThemeColors;
+}
+
+// Tema claro estendido e otimizado
+export const DefaultTheme: AppTheme = {
   dark: false,
   colors: {
     primary: "rgb(0, 122, 255)",
@@ -10,7 +26,8 @@ export const DefaultTheme = {
   },
 };
 
-export const DarkTheme = {
+// Tema escuro estendido e otimizado
+export const DarkTheme: AppTheme = {
   dark: true,
   colors: {
     primary: "rgb(10, 132, 255)",

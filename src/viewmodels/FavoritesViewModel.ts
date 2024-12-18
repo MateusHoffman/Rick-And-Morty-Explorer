@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import SQLite from "react-native-sqlite-storage";
+import { useEffect, useState, useCallback } from "react";
+import * as SQLite from "expo-sqlite";
 import {
   getDBConnection,
   createTables,
@@ -9,66 +9,90 @@ import {
   isFavorite,
 } from "../services/database";
 
-interface Favorite {
+// Tipagem de um item favorito
+export interface Favorite {
   id: number;
   type: string;
   data: any;
 }
 
+// Tipagem para o SQLiteDatabase do expo-sqlite
+type Database = SQLite.SQLiteDatabase;
+
+// Hook de gerenciamento de favoritos
 export const useFavorites = () => {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [db, setDb] = useState<SQLite.SQLiteDatabase | null>(null);
+  const [db, setDb] = useState<Database | null>(null);
 
+  // Inicialização do banco de dados
   useEffect(() => {
-    const initDB = async () => {
-      const connection = await getDBConnection();
-      await createTables(connection);
-      setDb(connection);
-      await loadFavorites(connection);
+    const initializeDatabase = async () => {
+      try {
+        const connection = await getDBConnection();
+        await createTables(connection);
+        setDb(connection as Database);
+        await loadFavorites(connection as Database);
+      } catch (error) {
+        console.error("Erro ao inicializar banco de dados:", error);
+      }
     };
-    initDB();
+
+    initializeDatabase();
   }, []);
 
-  // Carrega os favoritos
-  const loadFavorites = async (connection: SQLite.SQLiteDatabase) => {
-    const favs = await getFavorites(connection);
-    setFavorites(
-      favs.map((item) => ({
+  // Carrega os favoritos do banco e atualiza o estado local
+  const loadFavorites = useCallback(async (connection: Database) => {
+    try {
+      const favoritesFromDB = await getFavorites(connection);
+      const parsedFavorites = favoritesFromDB.map((item) => ({
         id: item.id,
         type: item.type,
         data: JSON.parse(item.data),
-      }))
-    );
-  };
+      }));
+      setFavorites(parsedFavorites);
+    } catch (error) {
+      console.error("Erro ao carregar favoritos:", error);
+    }
+  }, []);
 
   // Força o refresh da lista de favoritos
-  const refreshFavorites = async () => {
+  const refreshFavorites = useCallback(async () => {
     if (!db) return;
     await loadFavorites(db);
-  };
+  }, [db, loadFavorites]);
 
-  // Adiciona ou remove um favorito
-  const toggleFavorite = async (item: any, type: string) => {
-    if (!db) return;
+  // Adiciona ou remove um item da lista de favoritos
+  const toggleFavorite = useCallback(
+    async (item: any, type: string) => {
+      if (!db) return;
 
-    const alreadyFav = await isFavorite(db, item.id);
-    if (alreadyFav) {
-      await removeFavorite(db, item.id);
-    } else {
-      await saveFavorite(db, item.id, type, JSON.stringify(item));
-    }
-    await loadFavorites(db); // Atualiza o estado local
-  };
+      try {
+        const alreadyFav = await isFavorite(db, item.id);
 
-  // Verifica se o item é favorito
-  const checkIfFavorite = (id: number) => {
-    return favorites.some((fav) => fav.id === id);
-  };
+        if (alreadyFav) {
+          await removeFavorite(db, item.id);
+        } else {
+          await saveFavorite(db, item.id, type, JSON.stringify(item));
+        }
+
+        await loadFavorites(db);
+      } catch (error) {
+        console.error("Erro ao alternar favorito:", error);
+      }
+    },
+    [db, loadFavorites]
+  );
+
+  // Verifica se um item específico está nos favoritos
+  const checkIfFavorite = useCallback(
+    (id: number) => favorites.some((fav) => fav.id === id),
+    [favorites]
+  );
 
   return {
     favorites,
     toggleFavorite,
     checkIfFavorite,
-    refreshFavorites, // Função para forçar o refresh
+    refreshFavorites,
   };
 };
