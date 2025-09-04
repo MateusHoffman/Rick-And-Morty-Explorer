@@ -45,3 +45,4 @@ Este projeto utiliza as seguintes dependências principais:
 Este projeto foi desenvolvido por **Mateus Hoffman**.
 
 - E-mail: [mateushoffmandev@gmail.com](mailto:mateushoffmandev@gmail.com)
+# Rick-And-Morty-Explorer
